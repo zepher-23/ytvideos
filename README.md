@@ -1,54 +1,58 @@
-# Remotion video
+# Remotion Motion Graphics & Explainer Video Suite
 
-<p align="center">
-  <a href="https://github.com/remotion-dev/logo">
-    <picture>
-      <source media="(prefers-color-scheme: dark)" srcset="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-dark.apng">
-      <img alt="Animated Remotion Logo" src="https://github.com/remotion-dev/logo/raw/main/animated-logo-banner-light.gif">
-    </picture>
-  </a>
-</p>
+A centralized, programmatic video generation framework built with [Remotion](https://www.remotion.dev) and React for producing high-fidelity educational and explainer videos.
 
-Welcome to your Remotion project!
+---
 
-## Commands
+## Channels & Content Architecture
 
-**Install Dependencies**
+- **`everything-curated`**: Deep-dive educational explainer series (e.g. *Types of Depression*).
+- **`cognify`**: Cognitive science and psychology explainers.
+- **`gsd`**: Productivity, history, and timeline visualizers.
+- **`synthesized`**: Technology, AI, and systems architecture.
+- **`the-archive`**: Historical and archival documentary animations.
+- **`shared`** (`src/shared/`): Centralized component and motion library (canonical `CuratedStickman`, 3D props, medical models, and pure kinematic functions).
 
-```console
-npm i
+---
+
+## Quick Start
+
+### 1. Install Dependencies
+```bash
+npm install
 ```
 
-**Start Preview**
-
-```console
+### 2. Launch Remotion Studio
+```bash
 npm run dev
 ```
+Open your browser at `http://localhost:3000` to inspect and scrub through compositions, scenes, and frame timelines.
 
-**Render video**
+---
 
-```console
-npx remotion render
+## Project Structure
+
+```text
+my-video/
+├── src/
+│   ├── Root.jsx                  # Master Remotion composition registry
+│   ├── index.js                  # Entrypoint
+│   ├── everything-curated/       # "Everything Curated" compositions & scenes
+│   │   ├── scenes/               # Modular scene components (Scene 01 to Scene 09...)
+│   │   ├── scenes.config.js      # Scene timeline, duration & frame registration
+│   │   └── index.jsx             # Video composition assembly & audio sync
+│   └── shared/                   # Shared design system & motion library
+│       ├── characters/           # Canonical stickman character models
+│       ├── environments/         # Floor grids, scientific backgrounds
+│       ├── props/                # Reusable vector & 3D props (wheels, neurons, pills)
+│       ├── motion/               # Pure mathematical kinematic functions
+│       └── CATALOG.md            # Living catalog of reusable assets
+└── public/                       # Audio voiceovers and static assets
 ```
 
-**Upgrade Remotion**
+---
 
-```console
-npx remotion upgrade
-```
-
-## Docs
-
-Get started with Remotion by reading the [fundamentals page](https://www.remotion.dev/docs/the-fundamentals).
-
-## Help
-
-We provide help on our [Discord server](https://discord.gg/6VzzNDwUwV).
-
-## Issues
-
-Found an issue with Remotion? [File an issue here](https://github.com/remotion-dev/remotion/issues/new).
-
-## License
-
-Note that for some entities a company license is needed. [Read the terms here](https://github.com/remotion-dev/remotion/blob/main/LICENSE.md).
+## Tech Stack
+- **Framework**: Remotion (v4)
+- **UI / Graphics**: React, SVG vector graphics, Remotion Spring & Interpolation kinematics
+- **Fonts**: `@remotion/google-fonts`
