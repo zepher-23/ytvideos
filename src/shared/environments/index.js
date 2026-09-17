@@ -1,3 +1,4 @@
+export { ModularFloor } from './ModularFloor.jsx';
 export { TiledFloor } from './TiledFloor.jsx';
 export { ScientificGrid } from './ScientificGrid.jsx';
 export { GardenBackground } from './GardenBackground.jsx';

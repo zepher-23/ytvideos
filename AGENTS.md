@@ -1,9 +1,9 @@
 # Workspace Instructions & Architecture Guide
 
-## Reusable Asset & Motion System (`src/shared/`)
+## Reusable Asset & Motion System (`my-video/src/shared/` / `src/shared/`)
 
 All channels (`everything-curated`, `cognify`, `gsd`, `synthesized`, `the-archive`) share a centralized library of characters, environments, props, and kinematics located in:
-`src/shared/`
+`src/shared/` (or `my-video/src/shared/` from workspace root)
 
 ### 1. File Structure Overview
 - `src/shared/characters/`: Canonical figures (e.g. `CuratedStickman.jsx`).
@@ -20,11 +20,22 @@ All channels (`everything-curated`, `cognify`, `gsd`, `synthesized`, `the-archiv
 3. **Store New Assets in `src/shared/`**: Follow the protocol in `PROTOCOLS.md` to parameterize, export, and document any new element, background, or kinematic movement.
 4. **Pure Kinematics**: Movements must be pure functions of `frame` inside `src/shared/motion/`.
 5. **Strict No-Render Rule**: Do not execute `remotion render` or `remotion still` unless explicitly requested.
-6. **Mandatory Text-Fitting Protocol**: Never render raw `<text>` inside containers based on arbitrary visual guesses. Always use the deterministic mathematical formulas in `PROTOCOLS.md` or the `AutoBadge` / `fitText` primitives from `src/shared/` to guarantee zero text overflow across all screens.
-7. **CSS & Tailwind for Text Layouts vs. SVG for Custom Drawings**: Use HTML/CSS and Tailwind CSS for elements that are primarily shapes and text (flowchart nodes, cards, badges, banners, buttons, diagnosis panels) where Flexbox, auto-wrapping, padding, and border utilities prevent text overflow naturally. Reserve SVG for custom vector artwork, canonical characters (`CuratedStickman`), complex paths, graphs, blueprints, and freehand illustrations.
-8. **Strict One-Scene-Per-File & Individual Scene Workflow**: Never group or batch multiple scenes into combined files (e.g. `Part01.jsx`, `Batch1.jsx`). Every single scene MUST live in its own separate, dedicated file (e.g. `Scene01.jsx`, `Scene02.jsx`, ... `Scene100.jsx`). When creating, editing, or fine-tuning scenes for any video across any channel, always develop them individually, one by one, with complete, unhurried focus on that single scene's timing, kinematics, and visual composition. Never batch them.
-9. **Preserve `scenes.md`**: Never delete or remove `scenes.md`. This file is the primary user input source where video scenes, scripts, and production prompts are written and uploaded.
+6. **Direct Focus & Token Efficiency**: Focus strictly on the task at hand. Do not waste tokens or time on superfluous analysis, unnecessary exploration, or redundant verification checks for obvious code changes. Execute the requested edits directly and concisely.
+7. **Strict One-Scene-Per-File**: Every scene lives in its own dedicated file in `src/everything-curated/scenes/`. Never combine or batch them.
 
+### 3. Video-Specific Scene Timing & SRT Synchronization
 
+**Rule**: An SRT file belongs ONLY to its specific video project. **NEVER** apply an SRT file globally to other videos or channels.
 
-
+1. **Per-Video SRT Assignment**:
+   - Each video project declares its own active audio and SRT file (e.g. `ACTIVE_SRT_FILE` in `scenes.config.js` or via the user's prompt).
+   - For the current *10 Types of Depression* video (`everything-curated`), the active SRT is `public/Generated_Audio_September_15_2026_-_1_01AM_eng.srt`.
+   - When switching to a new video or channel, inspect THAT video's configuration or prompt to locate its distinct SRT file. If a video does not have an SRT file, use the durations in `scenes.md` or default pacing.
+2. **Timing Calculation (When an SRT is assigned to that video)**:
+   - Entry `N` in that video's SRT defines `Scene N`.
+   - Convert `HH:MM:SS,mmm` to 30fps frames:
+     - `startFrame = Math.round(startSeconds * 30)`
+     - `endFrame = Math.round(endSeconds * 30)`
+     - `durationInFrames = endFrame - startFrame`
+3. **Narration Alignment**: Structure all internal visual beats, text animations, and kinematic actions to match the exact spoken words in that video's designated SRT entry.
+4. **Dynamic Automation**: `scripts/sync-scenes.mjs` reads `ACTIVE_SRT_FILE` directly from that video's `scenes.config.js`. If none is specified, it does not force any SRT.

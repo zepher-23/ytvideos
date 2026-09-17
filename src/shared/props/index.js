@@ -12,7 +12,6 @@ export { TransparentBucket } from './TransparentBucket.jsx';
 export { PillContainer } from './PillContainer.jsx';
 export { SvgPillContainer, SvgPillContainerBack, SvgPillContainerFront } from './SvgPillContainer.jsx';
 export { MagnifyingGlass } from './MagnifyingGlass.jsx';
+export { BallAndChain } from './BallAndChain';
+export { Brain } from './Brain';
 export { VerticalWheel } from './VerticalWheel.jsx';
-
-
-

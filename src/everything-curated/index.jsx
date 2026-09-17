@@ -85,8 +85,7 @@ export const EverythingCurated = ({
   return (
     <AbsoluteFill
       style={{
-        backgroundColor: "#0F172A",
-        translate: "-4px 0px",
+        backgroundColor: "#0F172A"
       }}
     >
       <Audio src={staticFile("Generated Audio September 15, 2026 - 1_01AM.wav")} />

@@ -40,6 +40,22 @@ Welcome to the centralized asset and kinematics registry. All components, backgr
 
 ## 2. Environments (`src/shared/environments/`)
 
+### `ModularFloor`
+- **Import**: `import { ModularFloor } from '../shared';`
+- **Description**: Edge-to-edge continuous floor baseline with alternating grey and white tiles (supports 3D perspective receding checkerboard or 2D flat grid) and ambient contact depth shadow.
+- **Props**:
+  - `floorY`: default `780`
+  - `variant`: `'perspective'` | `'flat'` (default: `'perspective'`)
+  - `tileColorEven`: default `'#FFFFFF'`
+  - `tileColorOdd`: default `'#E2E8F0'`
+  - `strokeColor`: default `'#CBD5E1'`
+  - `baselineColor`: default `'#0F172A'`
+  - `baselineWidth`: default `6`
+  - `numRows`: default `5`
+  - `numCols`: default `22`
+  - `showShadow`: default `true`
+  - `standalone`: default `false` (set `true` to wrap in full-screen SVG)
+
 ### `TiledFloor`
 - **Import**: `import { TiledFloor } from '../shared';`
 - **Description**: Perspective tiled floor with grid lines receding to a horizon.
@@ -209,6 +225,35 @@ Welcome to the centralized asset and kinematics registry. All components, backgr
   x={1360}
   y={540}
   width={760}
+/>
+### `BallAndChain`
+- **Import**: `import { BallAndChain } from '../shared';`
+- **Description**: Canonical giant steel prison ball and chain prop. Features volumetric cast-iron spherical shading, specular highlight sheen, welded eyelet flange, interlocking steel chain links with realistic catenary sag, hinged ankle shackle cuff with bolt, and floor friction scrape marks.
+- **Props**: `ballX`, `ballY`, `radius`, `targetX` (ankle cuff X), `targetY` (ankle cuff Y), `isTaut`, `dragProgress`.
+- **Example**:
+```jsx
+<BallAndChain
+  ballX={450}
+  ballY={710}
+  radius={90}
+  targetX={750}
+  targetY={790}
+  isTaut={true}
+/>
+```
+
+### `Brain`
+- **Import**: `import { Brain } from '../shared';`
+- **Description**: Canonical anatomical brain component derived from library vector asset (`brain.svg`). Features detailed anatomical lobes, gyri, sulci, and cerebellum. Supports centering, scaling, rotation, drop shadow/glow, and dynamic `shutdownProgress` (fading from natural pink/coral to desaturated dead slate).
+- **Props**: `x`, `y`, `scale`, `rotation`, `opacity`, `shutdownProgress` (0 to 1), `glowColor`.
+- **Example**:
+```jsx
+<Brain
+  x={960}
+  y={540}
+  scale={1.2}
+  shutdownProgress={0.8}
+  glowColor="#EF4444"
 />
 ```
 

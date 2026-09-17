@@ -137,28 +137,35 @@ export const CuratedStickman = ({
   const isContent = pose === "content" && !isShock;
   const isThinking = (pose === "thinking" || pose === "ponder") && !isShock;
   const isAbnormal = (pose === "abnormal" || pose === "contorted" || pose === "malfunction") && !isShock;
-  const isDefeat = (pose === "defeat" || slumpProgress > 0) && !isShock && !isContent && !isAbnormal && !isThinking;
-  const isReaching = (pose === "reaching" || reachProgress > 0) && !isShock && !isDefeat && !isContent && !isAbnormal && !isThinking;
-  const isIdle = !isShock && !isDefeat && !isContent && !isReaching && !isAbnormal && !isThinking && !armLeft && !armRight;
+  const isDragging = (pose === "dragging" || pose === "drag" || pose === "pulling") && !isShock;
+  const isDefeat = (pose === "defeat" || slumpProgress > 0) && !isShock && !isContent && !isAbnormal && !isThinking && !isDragging;
+  const isReaching = (pose === "reaching" || reachProgress > 0) && !isShock && !isDefeat && !isContent && !isAbnormal && !isThinking && !isDragging;
+  const isIdle = !isShock && !isDefeat && !isContent && !isReaching && !isAbnormal && !isThinking && !isDragging && !armLeft && !armRight;
 
   const easeSlump = slumpProgress * slumpProgress * (3 - 2 * slumpProgress);
   const leanReachX = isReaching ? (reachDirection === "left" ? -18 * reachProgress : 18 * reachProgress) : 0;
 
+  // Strained dragging walk cycle bounce
+  const dragCycle = ((frame % 36) / 36) * 2 * Math.PI;
+  const dragBobY = isDragging ? Math.abs(Math.sin(dragCycle)) * 6 : 0;
+
   // Slump & lean offsets
   const slumpTorsoY = isAbnormal ? shoulderY + 22 : shoulderY + 36 * easeSlump;
   const slumpTorsoX = isAbnormal ? -16 : 24 * easeSlump + leanReachX;
-  const torsoTopX = isShock ? -20 : isThinking ? 6 : slumpTorsoX;
-  const torsoBottomX = isShock ? -6 : isAbnormal ? 14 : 0;
+  const torsoTopX = isShock ? -20 : isThinking ? 6 : isDragging ? 32 : slumpTorsoX;
+  const torsoBottomX = isShock ? -6 : isAbnormal ? 14 : isDragging ? -10 : 0;
 
   // Head offsets
-  const curHeadX = isShock ? -26 : isAbnormal ? -22 : isThinking ? 10 : 28 * easeSlump + leanReachX * 1.25;
-  const curHeadY = isShock ? headCenterY - 6 : isAbnormal ? headCenterY + 18 : isThinking ? headCenterY + 4 : headCenterY + 44 * easeSlump;
+  const curHeadX = isShock ? -26 : isAbnormal ? -22 : isThinking ? 10 : isDragging ? 38 : 28 * easeSlump + leanReachX * 1.25;
+  const curHeadY = isShock ? headCenterY - 6 : isAbnormal ? headCenterY + 18 : isThinking ? headCenterY + 4 : isDragging ? headCenterY + 16 - dragBobY : headCenterY + 44 * easeSlump;
   const headRotation = isShock
     ? -8
     : isAbnormal
     ? -24
     : isThinking
     ? 6
+    : isDragging
+    ? 12
     : isReaching
     ? (reachDirection === "left" ? -5 * reachProgress : 5 * reachProgress)
     : 15 * easeSlump;
@@ -233,7 +240,71 @@ export const CuratedStickman = ({
           />
           <line x1={botW * 0.75} y1="0" x2={botW * 1.25} y2="0" stroke="#000000" strokeWidth={strokeW} strokeLinecap="round" />
         </g>
-      ) : (
+      ) : isDragging ? (() => {
+        // Natural human dragging gait: alternating between front stride lift and back chained leg drag
+        const pSin = Math.sin(dragCycle);
+        // Front leg stride & lift (Phase 0 to PI: front leg steps forward and lands)
+        const frontLift = Math.max(0, pSin) * 24;
+        const frontStep = pSin * 26;
+        const frontFootX = torsoBottomX + botW * 0.95 + frontStep;
+        const frontFootY = -frontLift;
+        const frontKneeX = torsoBottomX + botW * 1.15 + frontStep * 0.5;
+        const frontKneeY = hipY * 0.55 - frontLift * 0.7;
+
+        // Back leg drag (Phase PI to 2*PI: back chained leg scrapes and drags forward)
+        const backDrag = Math.max(0, -pSin) * 32;
+        const backFootX = torsoBottomX - botW * 1.8 + backDrag;
+        const backKneeX = torsoBottomX - botW * 1.2 + backDrag * 0.6;
+        const backKneeY = hipY * 0.52;
+
+        return (
+          <g id="char-legs-dragging">
+            {/* Left Leg (back, chained to iron ball): hip -> flexed knee -> ankle dragging on floor */}
+            <path
+              d={`M ${torsoBottomX - botW * 0.45} ${hipY} 
+                 L ${backKneeX} ${backKneeY} 
+                 L ${backFootX} 0`}
+              fill="none"
+              stroke="#000000"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {/* Back foot dragged flat along floor */}
+            <line
+              x1={backFootX}
+              y1="0"
+              x2={backFootX + 26}
+              y2="0"
+              stroke="#000000"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+            />
+
+            {/* Right Leg (front, stepping & driving): hip -> bent knee -> foot lifting & planting */}
+            <path
+              d={`M ${torsoBottomX + botW * 0.45} ${hipY} 
+                 L ${frontKneeX} ${frontKneeY} 
+                 L ${frontFootX} ${frontFootY}`}
+              fill="none"
+              stroke="#000000"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            {/* Front foot planting firmly on floor */}
+            <line
+              x1={frontFootX}
+              y1={frontFootY}
+              x2={frontFootX + 28}
+              y2={frontFootY}
+              stroke="#000000"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+            />
+          </g>
+        );
+      })() : (
         // Standard clean stick legs with L-shaped feet pointing outward
         <g id="char-legs-standard">
           {/* Left leg */}
@@ -390,6 +461,12 @@ export const CuratedStickman = ({
         ) : isShock || mouth === "shock" ? (
           // Alarmed open 'O' mouth
           <ellipse cx="2" cy={headR * 0.32} rx="10" ry="16" fill="#000000" />
+        ) : mouth === "grimace" || isDragging ? (
+          // Determined gritting exertion mouth
+          <g id="mouth-grimace">
+            <path d={`M ${-headR * 0.24} ${headR * 0.28} Q 0 ${headR * 0.22} ${headR * 0.24} ${headR * 0.28}`} fill="none" stroke="#000000" strokeWidth="5.5" strokeLinecap="round" />
+            <line x1={-headR * 0.16} y1={headR * 0.36} x2={headR * 0.16} y2={headR * 0.36} stroke="#000000" strokeWidth="4" strokeLinecap="round" />
+          </g>
         ) : mouth === "frown" || isDefeat ? (
           // Natural sorrowful sad downturned mouth
           <path d={`M ${-headR * 0.22} ${headR * 0.32} Q 0 ${headR * 0.18} ${headR * 0.22} ${headR * 0.32}`} fill="none" stroke="#000000" strokeWidth="5" strokeLinecap="round" />
@@ -536,6 +613,48 @@ export const CuratedStickman = ({
           <ellipse cx={torsoTopX + topW + 78} cy={shoulderY + torsoH * 0.62} rx="4" ry="6" transform={`rotate(35 ${torsoTopX + topW + 78} ${shoulderY + torsoH * 0.62})`} fill="#000000" />
         </g>
       )}
+
+      {isDragging && !armLeft && !armRight && (() => {
+        // Natural human heavy pulling arm mechanics
+        const armPumping = Math.sin(dragCycle) * 12;
+        const elbowLx = torsoTopX - topW - 32 - armPumping * 0.6;
+        const elbowLy = shoulderY + 68;
+        const handLx = torsoTopX - topW - 70 - armPumping;
+        const handLy = shoulderY + 115;
+
+        const elbowRx = torsoTopX + topW + 32 + armPumping * 0.6;
+        const elbowRy = shoulderY + 62;
+        const handRx = torsoTopX + topW + 72 + armPumping;
+        const handRy = shoulderY + 45;
+
+        return (
+          <g id="char-arms-dragging">
+            {/* Left arm (rear pump) */}
+            <path
+              d={`M ${torsoTopX - topW} ${shoulderY + 6} L ${elbowLx} ${elbowLy} L ${handLx} ${handLy}`}
+              fill="none"
+              stroke="#000000"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx={handLx} cy={handLy} r={handR} fill="#000000" stroke="#FFFFFF" strokeWidth="2" />
+            <ellipse cx={handLx + 4} cy={handLy - 2} rx="4" ry="6" transform={`rotate(35 ${handLx + 4} ${handLy - 2})`} fill="#000000" stroke="#FFFFFF" strokeWidth="1.5" />
+
+            {/* Right arm (forward drive pump) */}
+            <path
+              d={`M ${torsoTopX + topW} ${shoulderY + 6} L ${elbowRx} ${elbowRy} L ${handRx} ${handRy}`}
+              fill="none"
+              stroke="#000000"
+              strokeWidth={strokeW}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+            <circle cx={handRx} cy={handRy} r={handR} fill="#000000" stroke="#FFFFFF" strokeWidth="2" />
+            <ellipse cx={handRx - 4} cy={handRy - 2} rx="4" ry="6" transform={`rotate(-40 ${handRx - 4} ${handRy - 2})`} fill="#000000" stroke="#FFFFFF" strokeWidth="1.5" />
+          </g>
+        );
+      })()}
 
       {(armLeft || armRight) && (
         <g id="char-arms-custom">
