@@ -30,24 +30,34 @@ export const ModularFloor = ({
   floorY = 780,
   width = 1920,
   height = 1080,
+  horizonY,
+  vanishingPointX,
   variant = "perspective",
   tileColorEven = "#FFFFFF",
   tileColorOdd = "#E2E8F0",
   strokeColor = "#CBD5E1",
-  strokeWidth = 1.8,
+  strokeWidth = 1.6,
   baselineColor = "#0F172A",
   baselineWidth = 6,
-  numRows = 5,
+  numRows = 6,
   numCols = 22,
   showShadow = true,
+  showAtmosphere = true,
+  showBaseboard = false,
+  baseboardHeight = 22,
+  baseboardColor = "#F1F5F9",
   standalone = false,
   opacity = 1.0,
   id = "modular-floor",
 }) => {
-  const floorHeight = Math.max(20, height - floorY);
-  const bleed = 120;
+  const floorHeight = Math.max(40, height - floorY);
+  const bleed = 300;
   const startX = -bleed;
   const totalWidth = width + bleed * 2;
+
+  // Vanishing point: default eye level horizon at ~540 (or floorY - 240)
+  const vpHorizonY = horizonY !== undefined ? horizonY : Math.min(540, floorY - 200);
+  const vpX = vanishingPointX !== undefined ? vanishingPointX : width / 2;
 
   const content = (() => {
     if (variant === "flat") {
@@ -85,43 +95,53 @@ export const ModularFloor = ({
       );
     }
 
-    // Default: Perspective 3D receding checkerboard
-    const vanishingPointX = width / 2;
-    const vanishingPointY = -250;
+    // Authentic 3D perspective floor projection:
+    // Transversal rows foreshortened via 1/Z:
+    const C = height - vpHorizonY;
+    const Z_near = 1.0;
+    const Z_far = C / Math.max(10, floorY - vpHorizonY);
 
     const rowY = [];
-    for (let i = 0; i <= numRows; i++) {
-      const t = Math.pow(i / numRows, 1.4);
-      rowY.push(floorY + t * floorHeight);
+    const rowZ = [];
+    for (let r = 0; r <= numRows; r++) {
+      const z = Z_far + (r / numRows) * (Z_near - Z_far);
+      rowZ.push(z);
+      rowY.push(vpHorizonY + C / z);
     }
+
+    // World column positions to ensure full screen coverage at the furthest row
+    const spanWorld = (width + bleed * 2) * Z_far;
+    const colStepWorld = spanWorld / numCols;
+    const halfCols = Math.ceil(numCols / 2) + 2;
 
     const perspectiveTiles = [];
     for (let r = 0; r < numRows; r++) {
       const yTop = rowY[r];
       const yBottom = rowY[r + 1];
+      const zTop = rowZ[r];
+      const zBottom = rowZ[r + 1];
 
-      const tTop = (yTop - vanishingPointY) / (height - vanishingPointY);
-      const tBottom = (yBottom - vanishingPointY) / (height - vanishingPointY);
+      for (let c = -halfCols; c < halfCols; c++) {
+        const worldX1 = vpX + c * colStepWorld;
+        const worldX2 = vpX + (c + 1) * colStepWorld;
 
-      const spanTop = (width + 600) * tTop;
-      const spanBottom = (width + 600) * tBottom;
+        const x1_top = vpX + (worldX1 - vpX) / zTop;
+        const x2_top = vpX + (worldX2 - vpX) / zTop;
+        const x2_bot = vpX + (worldX2 - vpX) / zBottom;
+        const x1_bot = vpX + (worldX1 - vpX) / zBottom;
 
-      const leftTop = vanishingPointX - spanTop / 2;
-      const leftBottom = vanishingPointX - spanBottom / 2;
+        // Skip tiles completely outside horizontal viewport + bleed
+        const minTileX = Math.min(x1_top, x1_bot);
+        const maxTileX = Math.max(x2_top, x2_bot);
+        if (maxTileX < startX || minTileX > width + bleed) continue;
 
-      for (let c = 0; c < numCols; c++) {
-        const x1 = leftTop + (c / numCols) * spanTop;
-        const x2 = leftTop + ((c + 1) / numCols) * spanTop;
-        const x3 = leftBottom + ((c + 1) / numCols) * spanBottom;
-        const x4 = leftBottom + (c / numCols) * spanBottom;
-
-        const isEven = (r + c) % 2 === 0;
+        const isEven = (r + ((c % 2) + 2) % 2) % 2 === 0;
         const fill = isEven ? tileColorEven : tileColorOdd;
 
         perspectiveTiles.push(
           <polygon
             key={`persp-tile-${r}-${c}`}
-            points={`${x1.toFixed(1)},${yTop.toFixed(1)} ${x2.toFixed(1)},${yTop.toFixed(1)} ${x3.toFixed(1)},${yBottom.toFixed(1)} ${x4.toFixed(1)},${yBottom.toFixed(1)}`}
+            points={`${x1_top.toFixed(1)},${yTop.toFixed(1)} ${x2_top.toFixed(1)},${yTop.toFixed(1)} ${x2_bot.toFixed(1)},${yBottom.toFixed(1)} ${x1_bot.toFixed(1)},${yBottom.toFixed(1)}`}
             fill={fill}
             stroke={strokeColor}
             strokeWidth={strokeWidth}
@@ -149,8 +169,17 @@ export const ModularFloor = ({
         {/* Ambient contact depth shadow under baseline */}
         {showShadow && (
           <linearGradient id={`${id}-shadow-grad`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#0F172A" stopOpacity="0.18" />
+            <stop offset="0%" stopColor="#0F172A" stopOpacity="0.22" />
+            <stop offset="40%" stopColor="#0F172A" stopOpacity="0.07" />
             <stop offset="100%" stopColor="#0F172A" stopOpacity="0" />
+          </linearGradient>
+        )}
+
+        {/* Subtle atmospheric depth gradient easing distance tiles into background */}
+        {showAtmosphere && (
+          <linearGradient id={`${id}-atmo-grad`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#F8FAFC" stopOpacity="0.25" />
+            <stop offset="100%" stopColor="#F8FAFC" stopOpacity="0" />
           </linearGradient>
         )}
       </defs>
@@ -159,20 +188,63 @@ export const ModularFloor = ({
       <g clipPath={`url(#${id}-bounds-clip)`}>
         {content}
 
-        {/* Soft shadow overlay */}
+        {/* Atmospheric depth overlay */}
+        {showAtmosphere && (
+          <rect
+            x={startX}
+            y={floorY}
+            width={totalWidth}
+            height={floorHeight + 20}
+            fill={`url(#${id}-atmo-grad)`}
+            pointerEvents="none"
+          />
+        )}
+
+        {/* Ambient contact shadow along the wall-floor baseline */}
         {showShadow && (
           <rect
             x={startX}
             y={floorY}
             width={totalWidth}
-            height={26}
+            height={45}
             fill={`url(#${id}-shadow-grad)`}
             pointerEvents="none"
           />
         )}
       </g>
 
-      {/* EDGE-TO-EDGE FLOOR BASELINE */}
+      {/* Optional Architectural Baseboard Trim */}
+      {showBaseboard && (
+        <g id={`${id}-baseboard`}>
+          <rect
+            x={startX}
+            y={floorY - baseboardHeight}
+            width={totalWidth}
+            height={baseboardHeight}
+            fill={baseboardColor}
+            stroke={baselineColor}
+            strokeWidth="2"
+          />
+          <line
+            x1={startX}
+            y1={floorY - baseboardHeight}
+            x2={startX + totalWidth}
+            y2={floorY - baseboardHeight}
+            stroke={baselineColor}
+            strokeWidth="3"
+          />
+          <line
+            x1={startX}
+            y1={floorY - baseboardHeight * 0.4}
+            x2={startX + totalWidth}
+            y2={floorY - baseboardHeight * 0.4}
+            stroke={strokeColor}
+            strokeWidth="1.2"
+          />
+        </g>
+      )}
+
+      {/* EDGE-TO-EDGE GROUND BASELINE */}
       <line
         x1={startX}
         y1={floorY}
